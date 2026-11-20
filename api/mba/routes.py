@@ -18,6 +18,8 @@ for module in (applications, counsellor_requests):
     router.include_router(module.router)
 from . import gdpi  # noqa: E402 - WAT / GD / PI preparation + AI mock interview
 router.include_router(gdpi.router)
+from . import live_interview  # noqa: E402 - live AI mock interview (follow-up questions + final report)
+router.include_router(live_interview.router)
 from . import notifications, planner  # noqa: E402 - study planner + in-app notifications
 for module in (planner, notifications):
     router.include_router(module.router)

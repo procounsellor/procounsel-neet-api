@@ -12,7 +12,7 @@ only ever writes the `mba*` collections listed in `api/db/collections.py::WRITAB
 | Kind | Collections |
 |---|---|
 | Content (authored by faculty, re-creatable from `data/mba/content` + Admin edits) | `mbaExams`, `mbaPapers`, `mbaQuestionSets`, `mbaQuestions`, `mbaPrograms`, `mbaGdpiItems` |
-| Student data (personal) | `mbaProfiles`, `mbaAttempts`, `mbaAttemptAnalyses`, `mbaQuestionStats`, `mbaStudyTasks`, `mbaAiUsage`, `mbaShortlists`, `mbaCounsellorRequests`, `mbaNotificationState`, `mbaGdpiSessions`, `mbaLeaderboardPrefs`, `mbaDailyResults`, `mbaApplicationDocs` (records of uploaded application documents; the files live in storage, not Firestore) |
+| Student data (personal) | `mbaProfiles`, `mbaAttempts`, `mbaAttemptAnalyses`, `mbaQuestionStats`, `mbaStudyTasks`, `mbaAiUsage`, `mbaShortlists`, `mbaCounsellorRequests`, `mbaNotificationState`, `mbaGdpiSessions`, `mbaLiveInterviews`, `mbaLeaderboardPrefs`, `mbaDailyResults`, `mbaApplicationDocs` (records of uploaded application documents; the files live in storage, not Firestore) |
 | Shared / anonymous | `mbaQuestionReports` (reporter id removed when a student deletes their data), `mbaTestScoreStats` (score histograms, no ids) |
 
 Admin edits are versioned inside the docs themselves (`version` + last 50 `history` entries on
@@ -25,7 +25,7 @@ One-off export to a Cloud Storage bucket in the same region as the database
 ```bash
 gcloud firestore export "gs://BUCKET/mba/$(date -u +%Y-%m-%dT%H%M)" \
   --project=PROJECT_ID \
-  --collection-ids=mbaExams,mbaPapers,mbaQuestionSets,mbaQuestions,mbaTests,mbaPrograms,mbaGdpiItems,mbaProfiles,mbaAttempts,mbaAttemptAnalyses,mbaQuestionStats,mbaStudyTasks,mbaAiUsage,mbaShortlists,mbaCounsellorRequests,mbaNotificationState,mbaGdpiSessions,mbaQuestionReports,mbaLeaderboardPrefs,mbaDailyResults,mbaTestScoreStats,mbaApplicationDocs
+  --collection-ids=mbaExams,mbaPapers,mbaQuestionSets,mbaQuestions,mbaTests,mbaPrograms,mbaGdpiItems,mbaProfiles,mbaAttempts,mbaAttemptAnalyses,mbaQuestionStats,mbaStudyTasks,mbaAiUsage,mbaShortlists,mbaCounsellorRequests,mbaNotificationState,mbaGdpiSessions,mbaLiveInterviews,mbaQuestionReports,mbaLeaderboardPrefs,mbaDailyResults,mbaTestScoreStats,mbaApplicationDocs
 ```
 
 Keep the `--collection-ids` list in step with `WRITABLE_COLLECTIONS` when a collection is added.

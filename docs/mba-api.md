@@ -44,6 +44,7 @@ file first, then the code. Base path: `/api/v1/mba`. JSON, camelCase.
 | `mbaDailyResults` | `{yyyy-mm-dd}_{userId}` | Opted-in students' daily-challenge results (first answer per question) |
 | `mbaGdpiItems` | item id (`pi-personal-why-mba`) | GDPI guidance: WAT topics, GD topics, PI questions (see "GDPI") |
 | `mbaGdpiSessions` | auto | AI mock PI / timed WAT sessions with answers and feedback |
+| `mbaLiveInterviews` | auto | Live AI mock interviews: profile, question/answer turns, final report |
 | `mbaTestScoreStats` | testId | Histogram of every student's FIRST submitted score on a test: `{testId, paperId, count, scores: {"<int score>": n}, updatedAt}` (ProCounsel percentile) |
 | `mbaDoubts` | auto (uuid hex) | Doubt threads on a question (`scope: "question"`) and study-group posts (`scope: "group"`), replies embedded (see "Community") |
 | `mbaGroupMembers` | userId | The student's study group (`{exam}-{year}`, e.g. `cat-2026`) |
@@ -670,6 +671,37 @@ interface GdpiSessionSummary { id; kind; status; title; focus: string | null; an
   success) → same response as `/answers`. 415 not audio; 413 too large; 422 empty/too short a recording, transcript under
   20 characters, or a WAT session; 404 / 409 / 429 / 503 as for `/answers`.
 
+## Live AI interview 🔒 (`mbaStudent`)
+A conversational mock personal interview. The opening question is fixed; every later question is written by an AI
+"panel" from the candidate's profile and their previous answers (follow-ups, probing, moving between areas: background
+and why MBA, academics, work, goals, one opinion question, one situational question, at most one mild stress question).
+No feedback is shown during the interview; each answer is scored quietly and the last answer produces a report.
+Interviews live in `mbaLiveInterviews/{auto id}` = `{ userId, status, profile: { background, workMonths, target, about },
+totalQuestions, turns: [{ question, questionType, askedAt, answerText?, mode?, delivery?, scores?, note?, answeredAt? }],
+report, startedAt, completedAt, updatedAt }`. AI calls share the daily AI quota (`mbaAiUsage`, `MBA_AI_DAILY_LIMIT`):
+one per answer (scoring + next question, or the final report) and one for an early finish. An unusable model reply
+falls back to a PI-bank question (or a report without scores) and is not counted. Needs `OPENAI_API_KEY` (else 503).
+Questions never state facts or news, and nothing predicts admission (same output filter as GDPI feedback).
+
+- `POST /me/live-interviews` body `{ background?: "engineering"|"commerce"|"arts"|"science"; workMonths?: 0–240;
+  target?: string ≤120; about?: string ≤1500; questions?: 4–10 (default 7) }` → `LiveInterview` (first question asked).
+  429 when today's AI quota is already used up.
+- `GET /me/live-interviews` → `{ interviews: [{ id, status, answered, totalQuestions, overall, startedAt, completedAt }] }`
+  (newest first, max 30).
+- `GET /me/live-interviews/{id}` → `LiveInterview`.
+- `POST /me/live-interviews/{id}/answers` body `{ answerText }` (20–2,000 characters) → `{ interview: LiveInterview;
+  remainingToday }`. Answers the open (last) question; the response has the next question, or `status: "completed"`
+  and the `report` after the last one. 409 if the open question was answered meanwhile or the interview has finished.
+- `POST /me/live-interviews/{id}/answers/voice?durationSeconds=` raw audio body (same types and limits as GDPI voice
+  answers; audio is transcribed and discarded) → same response; the turn gets `mode: "voice"` and `delivery` stats.
+- `POST /me/live-interviews/{id}/finish` → same response. Ends early with a report; needs at least 2 answers (422).
+
+`LiveInterview` = `{ id, status: "in_progress"|"completed", profile: { background, workMonths, target },
+totalQuestions, turns: [{ number, question, questionType, askedAt, answerText|null, mode|null, delivery|null,
+scores: { structure, clarity, relevance, completeness }|null, note|null, answeredAt|null }],
+report: { overall: number|null, scores|null, band: "ready"|"almost"|"needs_work"|null, summary, strengths: string[],
+improvements: string[], fallback: boolean }|null, startedAt, completedAt|null }`.
+
 ## Study planner 🔒 (`mbaStudent`)
 Deterministic, rule-based weekly plan (`planner-v1`, no AI); the rules applied are returned in `basis.rules`.
 Weeks run Monday–Sunday (India time); `week` is any date in the week (default: this week).
@@ -1072,7 +1104,7 @@ interface AdminExamUpdate extends ExamUpdate { status: "draft" | "published"; cr
 ## Delete my MBA data 🔒 (`mbaStudent`)
 - `POST /me/data/delete` body `{ confirm: "DELETE" }` → `{ deleted: Record<collection, number>; anonymised: { mbaQuestionReports: number; mbaDoubts: number }; completedAt }`.
   Deletes every document of the caller in `mbaAttempts`, `mbaAttemptAnalyses`, `mbaQuestionStats`, `mbaStudyTasks`,
-  `mbaAiUsage`, `mbaGdpiSessions`, `mbaCounsellorRequests`, `mbaDailyResults`, `mbaLeaderboardPrefs`,
+  `mbaAiUsage`, `mbaGdpiSessions`, `mbaLiveInterviews`, `mbaCounsellorRequests`, `mbaDailyResults`, `mbaLeaderboardPrefs`,
   `mbaNotificationState`, `mbaShortlists`, `mbaProfiles`, `mbaCoachChats`, `mbaSyllabusProgress`, `mbaApplicationDocs` (uploaded files first, then their records). Question reports are kept for content quality but anonymised
   (moved to a random id, `userId` and rate-limit fields removed). Also deletes `mbaGroupMembers`, `mbaCommunityUsage` and
   `mbaSupportTickets`; in `mbaDoubts` threads (which hold other students' answers) the student is anonymised: their posts

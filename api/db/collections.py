@@ -21,6 +21,7 @@ WRITABLE_COLLECTIONS: frozenset[str] = frozenset({
     "mbaCounsellorRequests",  # MBA "talk to my counsellor" requests
     "mbaNotificationState",  # MBA in-app notification read state (userId -> lastSeenAt, dismissed)
     "mbaGdpiItems", "mbaGdpiSessions",  # MBA GDPI (WAT/GD/PI) content + mock sessions
+    "mbaLiveInterviews",  # MBA live AI mock interviews (follow-up questions + final report)
     "mbaAttemptAnalyses", "mbaQuestionReports",  # MBA mock analyst cache + question issue reports
     "mbaLeaderboardPrefs", "mbaDailyResults",  # MBA opt-in daily leaderboard
     "mbaTestScoreStats",  # MBA per-test score histogram of first attempts (ProCounsel percentile)
