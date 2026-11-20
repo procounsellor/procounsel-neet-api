@@ -36,7 +36,7 @@ CONFIRM_PHRASE = "DELETE"
 # Every document with this student's ``userId`` is deleted.
 USER_COLLECTIONS = (
     "mbaAttempts", "mbaAttemptAnalyses", "mbaQuestionStats", "mbaStudyTasks", "mbaAiUsage",
-    "mbaGdpiSessions", "mbaCounsellorRequests", "mbaDailyResults", "mbaLeaderboardPrefs",
+    "mbaGdpiSessions", "mbaLiveInterviews", "mbaCounsellorRequests", "mbaDailyResults", "mbaLeaderboardPrefs",
     "mbaNotificationState", "mbaShortlists", "mbaProfiles", "mbaApplicationDocs",
     "mbaGroupMembers", "mbaCommunityUsage", "mbaSupportTickets", "mbaCoachChats", "mbaSyllabusProgress",
 )
